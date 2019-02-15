@@ -57,11 +57,26 @@ int main ( int argc, char *argv[]) {
 } 
 
 int validate(char buf[], int len) {
-  printf("%d\n", len);
+
+  char submit[] = "Submit";
+  char list[] = "List";
+  char quit[] = "Quit";
+  char temp[len - 1];
+
   for(int i = 0; i < len - 1; i++) {
-    printf("%s\n", buf);
-    printf("%c\n", buf[i]);
-    if(isalpha(buf[i]) != 2) {
+    temp[i] = buf[i];
+  }
+
+  if(strcmp(temp, submit) == 0 || strcmp(temp, list) == 0) {
+    return 1;
+  }
+
+  if(strcmp(temp, quit) == 0) {
+    exit(0);
+  }
+
+  for(int i = 0; i < len - 1; i++) {
+    if(buf[i] < 97 || buf[i] > 122) {
       printf("Please enter only lower case characters.\n");
       return -1;
     }

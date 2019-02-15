@@ -50,7 +50,15 @@ int main ( void )  {
 		    //write(new_sock, response1, 20);
 			strncpy(buf, "OK\n", len);
 			write(new_sock, buf, len);
+//----------------------------------------------------------------------------------------------
+			//len=read(new_sock, buf, BUFSIZ);
+			//strncpy(substr, buf, len);
+			//printf(substr);
+			//strncpy(buf, "OK\n", len);
+			//write(new_sock, buf, len);
+//----------------------------------------------------------------------------------------------
 			score = 0;
+			
 			
 		}
 		else if(strstr(buf, "Submit\n")){
@@ -58,14 +66,48 @@ int main ( void )  {
 		    //write(new_sock, response2, 20);
 			strncpy(buf, "OK\n", len);
 			write(new_sock, buf, len);
+//----------------------------------------------------------------------------------------------
+			len=read(new_sock, buf, BUFSIZ);
+			printf("goodday");
+			if(strstr(buf, substr)){
+				char buff2[255];
+   				int isWord;
+				isWord = 0;
+   				FILE *fp = fopen("/../../usr/share/dict/american-english", "r");
+				while( fgets(buff2, 255, (FILE*)fp)!=NULL){
+					if (!strcmp(buff2, buf)){
+						isWord =1;
+						score = score+1;
+						sprintf(pts, "%d\n", score);
+						strncpy(buf, pts, len);
+						write(new_sock, buf, len);
+						break;
+						}
+				}
+				fclose(fp);
+				if (!isWord){
+						score = score-1;
+						sprintf(pts, "%d\n", score);
+						strncpy(buf, pts, len);
+						write(new_sock, buf, len);
+				}
+			}	
+			else	{
+				score = score-1;
+				sprintf(pts, "%d\n", score);
+				strncpy(buf, pts, len);
+				write(new_sock, buf, len);
+			}
+//----------------------------------------------------------------------------------------------
 		}
 		else if(strstr(buf, "List\n")){
 			char word_in_list[255];
-		    char response2[] = "Here is the list:\n";
+		    	char response2[] = "Here is the list:\n";
 		    //write(new_sock, response2, 20);
    			FILE *fp = fopen("/../../usr/share/dict/american-english", "r");
 			while( fgets(word_in_list, 255, (FILE*)fp)!=NULL){
 				if (!strcmp(word_in_list, buf)){
+				    write(new_sock, buf, 10);
 				}
 			}
 			fclose(fp);
@@ -87,12 +129,16 @@ int main ( void )  {
 			}
 			fclose(fp);
 			if (!isWord){
-				strncpy(buf, "-0\n", len);
-				write(new_sock, buf, len);
+					score = score-1;
+					sprintf(pts, "%d\n", score);
+					strncpy(buf, pts, len);
+					write(new_sock, buf, len);
 			}
 		}
 		else{
-			strncpy(buf, "+0\n", len);
+			score = score-1;
+			sprintf(pts, "%d\n", score);
+			strncpy(buf, pts, len);
 			write(new_sock, buf, len);
 		}
       if ( buf[0] == '.' ) break;            /* are we done yet?     */

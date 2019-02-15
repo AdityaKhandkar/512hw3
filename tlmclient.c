@@ -1,6 +1,9 @@
 /* Internet domain, connection-oriented CLIENT   */
 
 #include "local.h"
+
+int validate(char buf[], int len);
+
 int main ( int argc, char *argv[]) {
   int             orig_sock, /* Original socket descriptor in client */
                   len;       /* Length of server address             */
@@ -36,11 +39,33 @@ int main ( int argc, char *argv[]) {
   do {
     write(fileno(stdout), "> ", 3);                    /* Prompt user */
     if ((len=read(fileno(stdin), buf, BUFSIZ) ) > 0) { /* Get input   */
+      //buf = tolower(buf);
+      
+      while(validate(buf, len) != 1) {
+        write(fileno(stdout), "> ", 3);
+        len=read(fileno(stdin), buf, BUFSIZ);
+      }
+
+      // printf("%s\n", buf);
       write(orig_sock, buf, len);                      /* Write to sck*/
-      if ((len=read(orig_sock, buf, len)) >0)          /* If returned */
+      if ((len=read(orig_sock, buf, len)) > 0)          /* If returned */
         write(fileno(stdout), buf, len);               /* Display it  */
       }
     } while( buf[0] != '.');
     close(orig_sock);
     exit(0);
 } 
+
+int validate(char buf[], int len) {
+  printf("%d\n", len);
+  for(int i = 0; i < len - 1; i++) {
+    printf("%s\n", buf);
+    printf("%c\n", buf[i]);
+    if(isalpha(buf[i]) != 2) {
+      printf("Please enter only lower case characters.\n");
+      return -1;
+    }
+  }
+
+  return 1;
+}

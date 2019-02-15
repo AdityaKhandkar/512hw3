@@ -1,0 +1,5 @@
+gcc -o tlmclient tlmclient.c
+gcc -o tlmserver tlmserver.c
+
+mv tlmclient ~/Documents/512/hw3/question3b/exec
+mv tlmserver ~/Documents/512/hw3/question3b/exec

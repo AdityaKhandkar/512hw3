@@ -61,13 +61,14 @@ int validate(char buf[], int len) {
   char submit[] = "Submit";
   char list[] = "List";
   char quit[] = "Quit";
+  char set[] = "Set";
   char temp[len - 1];
 
   for(int i = 0; i < len - 1; i++) {
     temp[i] = buf[i];
   }
 
-  if(strcmp(temp, submit) == 0 || strcmp(temp, list) == 0) {
+  if(strcmp(temp, submit) == 0 || strcmp(temp, list) == 0 || strcmp(temp, set) == 0) {
     return 1;
   }
 

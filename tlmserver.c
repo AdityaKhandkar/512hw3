@@ -1,3 +1,5 @@
+
+
 /* Internet domain, connection-oriented SERVER   */
 
 #include "local.h"
@@ -43,27 +45,26 @@ int main ( void )  {
     int bound;
 	int score = 0;
 	char pts[1000];
+	char substr[]="eer";
     while ( (len=read(new_sock, buf, BUFSIZ)) > 0) {
-		char substr[]="eer";
+		printf("%s", substr);
 		if(strstr(buf, "Set\n")){
 		    char response1[] = "What are you setting the substring to?\n";
 		    //write(new_sock, response1, 20);
 			strncpy(buf, "OK\n", len);
 			write(new_sock, buf, len);
 //----------------------------------------------------------------------------------------------
-			//len=read(new_sock, buf, BUFSIZ);
-			//strncpy(substr, buf, len);
-			//printf(substr);
-			//strncpy(buf, "OK\n", len);
-			//write(new_sock, buf, len);
+			len=read(new_sock, buf, BUFSIZ);
+			strncpy(substr, buf, 3);
+			printf("%s", substr);
+			strncpy(buf, "OK\n", len);
+			write(new_sock, buf, len);
 //----------------------------------------------------------------------------------------------
 			score = 0;
-			
 			
 		}
 		else if(strstr(buf, "Submit\n")){
 		    char response2[] = "What is your submission?\n";
-		    //write(new_sock, response2, 20);
 			strncpy(buf, "OK\n", len);
 			write(new_sock, buf, len);
 //----------------------------------------------------------------------------------------------
@@ -107,7 +108,25 @@ int main ( void )  {
    			FILE *fp = fopen("/../../usr/share/dict/american-english", "r");
 			while( fgets(word_in_list, 255, (FILE*)fp)!=NULL){
 				if (!strcmp(word_in_list, buf)){
-				    write(new_sock, buf, 10);
+
+//####
+//####
+//####
+//####
+//####
+//----------------------------------------------------------------------------------------------
+					//len=read(new_sock, word_in_list, len);
+					//strncpy(buf, buf, 3);
+					//printf("%s", substr);
+					//strncpy(buf, "OK\n", len);
+					write(new_sock, buf, len);
+//----------------------------------------------------------------------------------------------
+//####
+//####
+//####
+//####
+//####
+
 				}
 			}
 			fclose(fp);

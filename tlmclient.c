@@ -41,17 +41,24 @@ int main ( int argc, char *argv[]) {
     if ((len=read(fileno(stdin), buf, BUFSIZ) ) > 0) { /* Get input   */
       //buf = tolower(buf);
       
-      while(validate(buf, len) != 1) {
+      char localbuf[len];
+      for(int i = 0; i < len; i++) {
+        localbuf[i] = buf[i];
+      }
+
+      while(validate(localbuf, len) != 1) {
         write(fileno(stdout), "> ", 3);
         len=read(fileno(stdin), buf, BUFSIZ);
+        strcpy(localbuf, buf);
       }
 
       // printf("%s\n", buf);
-      write(orig_sock, buf, len);                      /* Write to sck*/
+      write(orig_sock, localbuf, len);                      /* Write to sck*/
       if ((len=read(orig_sock, buf, len)) > 0)          /* If returned */
         write(fileno(stdout), buf, len);               /* Display it  */
       }
     } while( buf[0] != '.');
+
     close(orig_sock);
     exit(0);
 } 
@@ -68,6 +75,8 @@ int validate(char buf[], int len) {
     temp[i] = buf[i];
   }
 
+  printf("buf: %s, submit: %s, list: %s, set: %s\n", temp, submit, list, set);
+
   if(strcmp(temp, submit) == 0 || strcmp(temp, list) == 0 || strcmp(temp, set) == 0) {
     return 1;
   }
@@ -77,8 +86,8 @@ int validate(char buf[], int len) {
   }
 
   for(int i = 0; i < len - 1; i++) {
-    if(buf[i] < 97 || buf[i] > 122) {
-      printf("Please enter only lower case characters.\n");
+    if(!(buf[i] >= 97 && buf[i] <= 122) && !(buf[i] >= 65 && buf[i] <= 90)) {
+      printf("Please enter only alphabetic characters.\n");
       return -1;
     }
   }

@@ -71,24 +71,25 @@ int main ( int argc, char *argv[]) {
   char message_only_alphabets[] = "Please enter only alphabetic characters\n";
   char message_list_words[] = "Here is the list of words that matches ";
   char message_set_replace[] = "Enter a 3 letter set to replace the current set\n";
-  char message_score[] = "Your score is: ";
+  char message_score[] = "\nYour score is: ";
   char message_default[] = "Please only enter one of the 4 options\n";
   char substr[3];
 
-  write(fileno(stdout), message_start_game, strlen(message_start_game));
+  write(fileno(stdout), message_start_game, sizeof(message_start_game));
   write(fileno(stdout), "> ", 3);
+
   len = read(fileno(stdin), buf, BUFSIZ);
 
   while(validateSubstr(buf, len) == -1) {
-		write(fileno(stdout), message_validate_substr, strlen(message_validate_substr));
+		write(fileno(stdout), message_validate_substr, sizeof(message_validate_substr));
 		write(fileno(stdout), "> ", 3);
 		len = read(fileno(stdin), buf, BUFSIZ);
 	}
 
   strncpy(substr, buf, 3);
-  write(orig_sock, tolower(buf), 3); // Send the substring to the server
+  write(orig_sock, buf, 3); // Send the substring to the server
 
-  write(fileno(stdout), message_continue, strlen(message_continue));
+  write(fileno(stdout), message_continue, sizeof(message_continue));
 
   // len = read(fileno(stdin), buf, BUFSIZ);
 
@@ -105,63 +106,82 @@ int main ( int argc, char *argv[]) {
 	  write(fileno(stdout), "\n\n", 2);
 	  write(fileno(stdout), "> ", 3);
 
-
   	len = read(fileno(stdin), buf, BUFSIZ);
-
-  	// int v = validateOption(buf, len);
 
   	switch(validateOption(buf, len)) {
   		case 1: { // Submit
 
   			write(orig_sock, (char *)"1", 1);
-  			if((len = read(orig_sock, buf, BUFSIZ)) > 0)
-	  			write(fileno(stdout), message_make_submission, strlen(message_make_submission));
+  			if((len = read(orig_sock, buf, BUFSIZ)) > 0) // server sends "ok"
+          write(fileno(stdout), message_make_submission, sizeof(message_make_submission));
+        
   				// write(fileno(stdout), buf, len);
-  				
+  			
   			write(fileno(stdout), ">>> ", 5);
 
-				len = read(fileno(stdin), buf, BUFSIZ);
+				len = read(fileno(stdin), buf, BUFSIZ);	
 				
 				// Validate that the string they entered is only alphabets
 				while(len > 0 && validateInput(buf, len) == -1) {
-	  			write(fileno(stdout), message_only_alphabets, strlen(message_only_alphabets));
-	  			write(fileno(stdout), message_make_submission_again, strlen(message_make_submission_again));
+	  			write(fileno(stdout), message_only_alphabets, sizeof(message_only_alphabets));
+	  			write(fileno(stdout), message_make_submission_again, sizeof(message_make_submission_again));
 	  			write(fileno(stdout), ">>> ", 5);
 					len = read(fileno(stdin), buf, BUFSIZ);
 				}
 
 				// Send the word to the server
+				// printf("buf at client: %s\n", buf);
 				write(orig_sock, buf, len);
-
-				// Add code to display the reply from the server.
+				write(fileno(stdout), message_score, sizeof(message_score));
+				// Display the reply from the server.
 				len = read(orig_sock, buf, BUFSIZ);
+				// write(fileno(stdout), "Message from server: ", 22);
 
 				write(fileno(stdout), buf, len);
+				// printf("buf from server: %s\n", buf);
+				write(fileno(stdout), "\n", 1);
 
   		} break;
 
-  		case 2: { // List
+  		case 2: {   // List
+            printf("In LIST case");
+            write(fileno(stdout), message_list_words, strlen(message_list_words));
+            write(fileno(stdout), substr, strlen(substr));
+            write(fileno(stdout), ":\n", 2);
+            write(orig_sock, (char *)"2", 1);
+            char word[30];
+            while(1){
+                memset(word, 0, sizeof(word));
+                // write(orig_sock, word, 0);
+                if ((len=read(orig_sock, word, 30)) >0)  {        // If returned
+                    if(word[0] == 45){
+                        // write(fileno(stdout), "STOP", 4);
+                        // write(orig_sock, word, 30);                      //Write to sck
+                        read(orig_sock, word, 30);
+                        // write(orig_sock, word, 30);                      //Write to sck
+                        break;
+                    }
+                    else if((word[0]>=65&&word[0]<=90)||(word[0]>=97&&word[0]<=122)){
+                        write(fileno(stdout), word, 30);               // Display it
+                        write(orig_sock, word, 30);                      //Write to sck
+                    }
+                    else{
 
-				write(fileno(stdout), message_list_words, strlen(message_list_words));
-				write(fileno(stdout), substr, strlen(substr));
-				write(fileno(stdout), ":\n", 2);
-
-  			write(orig_sock, (char *)"2", 1);
-
-  			// Listing all the words that match the substring
-  			while((len = read(orig_sock, buf, BUFSIZ)) > 0) {
-  				write(fileno(stdout), buf, strlen(buf));
-  				write(fileno(stdout), "\n", 1);
-  			}
-  		} break;
+                    }
+                }
+            }
+            // write(fileno(stdout), "Lost", 4);
+          } break;
 
   		case 3: { // Set
-  			write(orig_sock, (char *)"3", 1);
-  			write(fileno(stdout), message_set_replace, strlen(message_set_replace));
-				write(fileno(stdout), ">>> ", 5);	
+        write(orig_sock, (char *)"3", 1);
+        if((len = read(orig_sock, buf, BUFSIZ)) > 0) // server sends "ok"
+          write(fileno(stdout), message_set_replace, sizeof(message_set_replace));
+        
+        write(fileno(stdout), ">>> ", 5); 
   			len = read(fileno(stdin), buf, BUFSIZ);
   			while(validateSubstr(buf, len) == -1) {
-					write(fileno(stdout), message_validate_substr, strlen(message_validate_substr));
+					write(fileno(stdout), message_validate_substr, sizeof(message_validate_substr));
 					write(fileno(stdout), ">>> ", 5);
 					len = read(fileno(stdin), buf, BUFSIZ);
 				}
@@ -170,13 +190,13 @@ int main ( int argc, char *argv[]) {
   		} break;
 
   		case 4: { // Quit
-  			write(fileno(stdout), message_score, strlen(message_score));
+  			write(fileno(stdout), message_score, sizeof(message_score));
   			write(orig_sock, (char *)"4", 1);
 
   			exit(0);
   		} break;
 
-  		default: write(fileno(stdout), message_default, strlen(message_default));
+  		default: write(fileno(stdout), message_default, sizeof(message_default));
   	}
   }
     close(orig_sock);
@@ -211,13 +231,28 @@ int validateOption(char buf[], int len) {
     temp[i] = buf[i];
   }
 
-  // printf("temp: %s, buf: %s", temp, buf);
+  // printf("temp: %s and buf: %s", temp, buf);
 
-  if(strcmp(temp, submit) == 0) return 1;
-  else if(strcmp(temp, list) == 0) return 2;
-  else if(strcmp(temp, set) == 0) return 3;
-  else if(strcmp(temp, quit) == 0) return 4;
-  else return -1;
+  if(strcmp(temp, submit) == 0) {
+  	memset(temp, 0, sizeof(temp));
+  	return 1;
+	}
+  else if(strcmp(temp, list) == 0) {
+  	memset(temp, 0, sizeof(temp));
+  	return 2;
+  } 
+  else if(strcmp(temp, set) == 0) {
+  	memset(temp, 0, sizeof(temp));
+  	return 3;
+	}
+  else if(strcmp(temp, quit) == 0) {
+  	memset(temp, 0, sizeof(temp));
+  	return 4;
+	}
+  else {
+  	memset(temp, 0, sizeof(temp));
+  	return -1;
+	}
 }
 
 int validateSubstr(char buf[], int len) {

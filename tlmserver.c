@@ -33,137 +33,143 @@ int main ( void )  {
     exit(3);
   }
   do {
-  clnt_len = sizeof(clnt_adr);
+  	clnt_len = sizeof(clnt_adr);
     if ((new_sock = accept ( orig_sock, (struct sockaddr *) &clnt_adr,
                              &clnt_len)) <0)  {      /* ACCEPT       */
     perror("accept error");
     close(orig_sock);
     exit(4);
-  }
-  if ( fork( ) == 0)  {                      /* In CHILD process     */
-    char temp;
-    int bound;
-	int score = 0;
-	char pts[1000];
-	char substr[]="eer";
-    while ( (len=read(new_sock, buf, BUFSIZ)) > 0) {
-		printf("%s", substr);
-		if(strstr(buf, "Set\n")){
-		    char response1[] = "What are you setting the substring to?\n";
-		    //write(new_sock, response1, 20);
-			strncpy(buf, "OK\n", len);
-			write(new_sock, buf, len);
-//----------------------------------------------------------------------------------------------
-			len=read(new_sock, buf, BUFSIZ);
-			strncpy(substr, buf, 3);
-			printf("%s", substr);
-			strncpy(buf, "OK\n", len);
-			write(new_sock, buf, len);
-//----------------------------------------------------------------------------------------------
-			score = 0;
-			
-		}
-		else if(strstr(buf, "Submit\n")){
-		    char response2[] = "What is your submission?\n";
-			strncpy(buf, "OK\n", len);
-			write(new_sock, buf, len);
-//----------------------------------------------------------------------------------------------
-			len=read(new_sock, buf, BUFSIZ);
-			printf("goodday");
-			if(strstr(buf, substr)){
-				char buff2[255];
-   				int isWord;
-				isWord = 0;
-   				FILE *fp = fopen("/../../usr/share/dict/american-english", "r");
-				while( fgets(buff2, 255, (FILE*)fp)!=NULL){
-					if (!strcmp(buff2, buf)){
-						isWord =1;
-						score = score+1;
-						sprintf(pts, "%d\n", score);
-						strncpy(buf, pts, len);
-						write(new_sock, buf, len);
-						break;
+  	}
+	  if (fork() == 0)  {                      /* In CHILD process     */
+	    char temp;
+	    int bound;
+			int score = 0;
+			char pts[1000];
+			char score_ptr[100];
+			char substr[3];
+			len = read(new_sock, buf, BUFSIZ); // Read the substring they set for the first time.
+			if(len > 0)
+				strncpy(substr, buf, 3);
+
+	    while ((len=read(new_sock, buf, BUFSIZ)) > 0) {
+				memset(score_ptr, 0, sizeof(score_ptr));
+			// memset(buf, 0, sizeof(buf));	
+				if(strstr(buf, "3")){
+
+	    	// char response1[] = "What are you setting the substring to?\n";
+		    	write(new_sock, "ok", 2);
+					memset(buf, 0, sizeof(buf));
+					len=read(new_sock, buf, BUFSIZ);
+					// memset(substr, 0, sizeof(substr));
+					strncpy(substr, buf, 3);
+					// printf("%s", substr);
+					// strncpy(buf, "OK\n", len);
+					// write(new_sock, buf, len);
+		//----------------------------------------------------------------------------------------------
+					printf("\n---\n");
+					printf("Inside Set\n");
+					printf("Substring: %s\n", substr);
+					printf("buffer: %s",buf);
+					printf("\n------------\n");
+				}
+			else if(strstr(buf, "1")){
+			 // char response2[] = "What is your submission?\n";
+					strncpy(buf, "OK", len);
+					write(new_sock, buf, len);
+
+					memset(buf, 0, sizeof(buf));
+
+					len=read(new_sock, buf, BUFSIZ);
+
+					printf("\n---\n");
+					printf("Inside Submit\n");
+					printf("Substring: %s\n",substr);
+					printf("buffer: %s", buf);
+
+					printf("\n------------\n");
+
+					if(strstr(buf, substr)){
+						printf("hit strstr\n");
+						char buff2[255];
+	   				int isWord;
+						isWord = 0;
+	   				FILE *fp = fopen("/../../usr/share/dict/american-english", "r");
+						while( fgets(buff2, 255, (FILE*)fp)!=NULL){
+							// sprintf(pts, "this is buff2: %s", buff2);
+							// sprintf(pts, "this is buf: %s", buf);
+
+							if (!strcmp(buff2, buf)){
+								printf("Word %s is correct\n", buf);
+								isWord =1;
+								score = score+1;
+								printf("score is: %d\n", score);
+								sprintf(score_ptr, "%d", score);
+								printf("score_ptr: %s\n", score_ptr);
+								strcat(score_ptr, "\0");
+								// int score_to_send = htons(score);
+								write(new_sock, score_ptr, sizeof(score_ptr));
+								// memset(pts, 0, sizeof(pts));
+								break;
+							}
 						}
-				}
-				fclose(fp);
-				if (!isWord){
+						fclose(fp);
+						if (!isWord){
+							printf("%s is not word\n", buf);
+							score = score-1;
+							printf("score is: %d\n", score);
+							sprintf(score_ptr, "Score: %d\nReason: Not a word\n", score);
+							strcat(score_ptr, "\0");
+							write(new_sock, score_ptr, sizeof(score_ptr));
+							memset(score_ptr, 0, sizeof(score_ptr));
+						}
+					}	
+					else{
 						score = score-1;
-						sprintf(pts, "%d\n", score);
-						strncpy(buf, pts, len);
-						write(new_sock, buf, len);
-				}
-			}	
-			else	{
-				score = score-1;
-				sprintf(pts, "%d\n", score);
-				strncpy(buf, pts, len);
-				write(new_sock, buf, len);
-			}
-//----------------------------------------------------------------------------------------------
-		}
-		else if(strstr(buf, "List\n")){
-			char word_in_list[255];
-		    	char response2[] = "Here is the list:\n";
-		    //write(new_sock, response2, 20);
-   			FILE *fp = fopen("/../../usr/share/dict/american-english", "r");
-			while( fgets(word_in_list, 255, (FILE*)fp)!=NULL){
-				if (!strcmp(word_in_list, buf)){
-
-//####
-//####
-//####
-//####
-//####
-//----------------------------------------------------------------------------------------------
-					//len=read(new_sock, word_in_list, len);
-					//strncpy(buf, buf, 3);
-					//printf("%s", substr);
-					//strncpy(buf, "OK\n", len);
-					write(new_sock, buf, len);
-//----------------------------------------------------------------------------------------------
-//####
-//####
-//####
-//####
-//####
-
-				}
-			}
-			fclose(fp);
-		}
-		else if(strstr(buf, substr)){
-			char buff2[255];
-   			int isWord;
-			isWord = 0;
-   			FILE *fp = fopen("/../../usr/share/dict/american-english", "r");
-			while( fgets(buff2, 255, (FILE*)fp)!=NULL){
-				if (!strcmp(buff2, buf)){
-					isWord =1;
-					score = score+1;
-					sprintf(pts, "%d\n", score);
-					strncpy(buf, pts, len);
-					write(new_sock, buf, len);
-					break;
+						printf("%s does not contain substring\n", buf);
+						printf("score is: %d\n", score);
+						sprintf(score_ptr, "%d\nReason: Doesn't contain substring\n", score);
+						strcat(score_ptr, "\0");	
+						write(new_sock, score_ptr, sizeof(score_ptr));
+						memset(score_ptr, 0, sizeof(score_ptr));
 					}
+					// char out[1];
+					// out[0] = score; 
+					printf("\nScore: %d", score);
+					printf("\nscore_ptr: %s", score_ptr);
 			}
-			fclose(fp);
-			if (!isWord){
-					score = score-1;
-					sprintf(pts, "%d\n", score);
-					strncpy(buf, pts, len);
-					write(new_sock, buf, len);
-			}
-		}
-		else{
-			score = score-1;
-			sprintf(pts, "%d\n", score);
-			strncpy(buf, pts, len);
-			write(new_sock, buf, len);
-		}
-      if ( buf[0] == '.' ) break;            /* are we done yet?     */
-    }
-    close(new_sock);                         /* In CHILD process     */
-    exit( 0);
-  } else close(new_sock);                    /* In PARENT process    */
+				else if(strstr(buf, "2")){                                            //LIST
+          printf("---------------------------------------\n");
+          printf("-----------------ENTER LIST----------------------\n");
+          printf("---------------------------------------\n");
+          printf("hitting");
+          char word_in_list[30];
+          FILE *fp = fopen("/../../usr/share/dict/american-english", "r");
+          while(fgets(word_in_list, 30, (FILE*)fp)!= NULL) {
+              if (strstr(word_in_list, substr)){
+                  printf("%s", word_in_list);
+                  write(new_sock, word_in_list, sizeof(word_in_list));
+              }
+              memset(word_in_list, 0, sizeof(word_in_list));
+          }
+          fclose(fp);
+          strncpy(word_in_list, "-", 1);
+          write(new_sock, word_in_list, sizeof(word_in_list));
+          memset(word_in_list, 0, sizeof(word_in_list));
+//                read(new_sock, buf, BUFSIZ);
+
+          printf("---------------------------------------\n");
+          printf("-----------------EXIT LIST----------------------\n");
+          printf("---------------------------------------\n");
+        }
+				else{ // Quit
+					sprintf(pts, "%d", score);
+					write(new_sock, pts, strlen(pts));
+				}
+
+		      if ( buf[0] == '.' ) break;            /* are we done yet?     */
+		    }
+	    close(new_sock);                         /* In CHILD process     */
+	    exit( 0);
+	  } else close(new_sock);                    /* In PARENT process    */
   } while( 1 );                              /* FOREVER              */
 }

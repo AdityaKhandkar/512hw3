@@ -2,7 +2,7 @@
 
 /* Internet domain, connection-oriented SERVER   */
 
-#include "local.h"
+#include "tlmlocal.h"
 int main ( void )  {
   int            orig_sock,  /* Original socket descriptor in server */
                  new_sock,   /* New socket descriptor from connect   */
@@ -54,7 +54,7 @@ int main ( void )  {
 	    while ((len=read(new_sock, buf, BUFSIZ)) > 0) {
 				memset(score_ptr, 0, sizeof(score_ptr));
 			// memset(buf, 0, sizeof(buf));	
-				if(strstr(buf, "3")){
+				if(strstr(buf, "3")){ // Set
 
 	    	// char response1[] = "What are you setting the substring to?\n";
 		    	write(new_sock, "ok", 2);
@@ -72,7 +72,7 @@ int main ( void )  {
 					printf("buffer: %s",buf);
 					printf("\n------------\n");
 				}
-			else if(strstr(buf, "1")){
+				else if(strstr(buf, "1")){ // Submit
 			 // char response2[] = "What is your submission?\n";
 					strncpy(buf, "OK", len);
 					write(new_sock, buf, len);
@@ -103,7 +103,7 @@ int main ( void )  {
 								isWord =1;
 								score = score+1;
 								printf("score is: %d\n", score);
-								sprintf(score_ptr, "%d", score);
+								sprintf(score_ptr, "%d + 1 = %d", score-1, score);
 								printf("score_ptr: %s\n", score_ptr);
 								strcat(score_ptr, "\0");
 								// int score_to_send = htons(score);
@@ -117,7 +117,7 @@ int main ( void )  {
 							printf("%s is not word\n", buf);
 							score = score-1;
 							printf("score is: %d\n", score);
-							sprintf(score_ptr, "Score: %d\nReason: Not a word\n", score);
+							sprintf(score_ptr, "%d - 1 = %d\nReason: Not a word",score+1, score);
 							strcat(score_ptr, "\0");
 							write(new_sock, score_ptr, sizeof(score_ptr));
 							memset(score_ptr, 0, sizeof(score_ptr));
@@ -127,7 +127,7 @@ int main ( void )  {
 						score = score-1;
 						printf("%s does not contain substring\n", buf);
 						printf("score is: %d\n", score);
-						sprintf(score_ptr, "%d\nReason: Doesn't contain substring\n", score);
+						sprintf(score_ptr, "%d - 1 = %d\nReason: Doesn't contain substring", score+1, score);
 						strcat(score_ptr, "\0");	
 						write(new_sock, score_ptr, sizeof(score_ptr));
 						memset(score_ptr, 0, sizeof(score_ptr));
@@ -136,8 +136,8 @@ int main ( void )  {
 					// out[0] = score; 
 					printf("\nScore: %d", score);
 					printf("\nscore_ptr: %s", score_ptr);
-			}
-				else if(strstr(buf, "2")){                                            //LIST
+				}
+				else if(strstr(buf, "2")){  //LIST
           printf("---------------------------------------\n");
           printf("-----------------ENTER LIST----------------------\n");
           printf("---------------------------------------\n");
@@ -162,8 +162,9 @@ int main ( void )  {
           printf("---------------------------------------\n");
         }
 				else{ // Quit
-					sprintf(pts, "%d", score);
-					write(new_sock, pts, strlen(pts));
+					memset(score_ptr, 0, sizeof(score_ptr));
+					sprintf(score_ptr, "%d", score);
+					write(new_sock, score_ptr, strlen(score_ptr));
 				}
 
 		      if ( buf[0] == '.' ) break;            /* are we done yet?     */

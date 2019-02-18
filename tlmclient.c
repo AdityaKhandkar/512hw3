@@ -1,6 +1,6 @@
 /* Internet domain, connection-oriented CLIENT   */
 
-#include "local.h"
+#include "tlmlocal.h"
 
 int validateInput(char buf[], int len);
 int validateOption(char buf[], int len);
@@ -70,22 +70,29 @@ int main ( int argc, char *argv[]) {
   char message_make_submission_again[] = "Please enter your submission again\n";
   char message_only_alphabets[] = "Please enter only alphabetic characters\n";
   char message_list_words[] = "Here is the list of words that matches ";
-  char message_set_replace[] = "Enter a 3 letter set to replace the current set\n";
+  char message_set_replace[] = "\nEnter a 3 letter set to replace the current set\n";
   char message_score[] = "\nYour score is: ";
+  char message_final_score[] = "\nYour final score is: ";
   char message_default[] = "Please only enter one of the 4 options\n";
-  char substr[3];
+  char message_set_after_list_1[] = "\nNow that you know all the words with the substring";
+  // char message_set_after_list_2 = " "
+  char substr[4];
 
   write(fileno(stdout), message_start_game, sizeof(message_start_game));
   write(fileno(stdout), "> ", 3);
 
+  memset(buf, 0, sizeof(buf));
   len = read(fileno(stdin), buf, BUFSIZ);
 
   while(validateSubstr(buf, len) == -1) {
 		write(fileno(stdout), message_validate_substr, sizeof(message_validate_substr));
 		write(fileno(stdout), "> ", 3);
+    memset(buf, 0, sizeof(buf));
 		len = read(fileno(stdin), buf, BUFSIZ);
 	}
 
+  memset(substr, 0, sizeof(substr));
+  // tolower(buf);
   strncpy(substr, buf, 3);
   write(orig_sock, buf, 3); // Send the substring to the server
 
@@ -106,7 +113,11 @@ int main ( int argc, char *argv[]) {
 	  write(fileno(stdout), "\n\n", 2);
 	  write(fileno(stdout), "> ", 3);
 
+    memset(buf, 0, sizeof(buf));
+
   	len = read(fileno(stdin), buf, BUFSIZ);
+
+    // printf("buf before switch: %s, len: %d\n", buf, len);
 
   	switch(validateOption(buf, len)) {
   		case 1: { // Submit
@@ -115,9 +126,9 @@ int main ( int argc, char *argv[]) {
   			if((len = read(orig_sock, buf, BUFSIZ)) > 0) // server sends "ok"
           write(fileno(stdout), message_make_submission, sizeof(message_make_submission));
         
-  				// write(fileno(stdout), buf, len);
-  			
-  			write(fileno(stdout), ">>> ", 5);
+        write(fileno(stdout), ">>> ", 5);
+        
+        memset(buf, 0, sizeof(buf));
 
 				len = read(fileno(stdin), buf, BUFSIZ);	
 				
@@ -130,21 +141,21 @@ int main ( int argc, char *argv[]) {
 				}
 
 				// Send the word to the server
-				// printf("buf at client: %s\n", buf);
 				write(orig_sock, buf, len);
 				write(fileno(stdout), message_score, sizeof(message_score));
-				// Display the reply from the server.
-				len = read(orig_sock, buf, BUFSIZ);
-				// write(fileno(stdout), "Message from server: ", 22);
+        
+        memset(buf, 0, sizeof(buf));
 
+        // Read the score in from server along with the reason.
+        len = read(orig_sock, buf, BUFSIZ);
+
+				// Display the reply from the server.
 				write(fileno(stdout), buf, len);
-				// printf("buf from server: %s\n", buf);
 				write(fileno(stdout), "\n", 1);
 
   		} break;
 
   		case 2: {   // List
-            printf("In LIST case");
             write(fileno(stdout), message_list_words, strlen(message_list_words));
             write(fileno(stdout), substr, strlen(substr));
             write(fileno(stdout), ":\n", 2);
@@ -152,25 +163,49 @@ int main ( int argc, char *argv[]) {
             char word[30];
             while(1){
                 memset(word, 0, sizeof(word));
-                // write(orig_sock, word, 0);
-                if ((len=read(orig_sock, word, 30)) >0)  {        // If returned
+                if ((len=read(orig_sock, word, sizeof(word))) >0)  {        // If returned
                     if(word[0] == 45){
                         // write(fileno(stdout), "STOP", 4);
                         // write(orig_sock, word, 30);                      //Write to sck
-                        read(orig_sock, word, 30);
+                        // read(orig_sock, word, 30);
                         // write(orig_sock, word, 30);                      //Write to sck
                         break;
                     }
                     else if((word[0]>=65&&word[0]<=90)||(word[0]>=97&&word[0]<=122)){
                         write(fileno(stdout), word, 30);               // Display it
-                        write(orig_sock, word, 30);                      //Write to sck
-                    }
-                    else{
-
+                        // write(orig_sock, word, 30);                      //Write to sck
                     }
                 }
             }
-            // write(fileno(stdout), "Lost", 4);
+
+            char message_set[150];
+            sprintf(message_set, "%s %s, enter a new substring to continue", message_set_after_list_1, substr);
+            write(fileno(stdout), message_set, strlen(message_set));
+
+            // Set the new substring
+            write(orig_sock, (char *)"3", 1);
+            if((len = read(orig_sock, buf, BUFSIZ)) > 0) // server sends "ok"
+              write(fileno(stdout), message_set_replace, sizeof(message_set_replace));
+            write(fileno(stdout), ">>> ", 5);
+
+            memset(buf, 0, sizeof(buf));
+
+            // Read the new substring
+            len = read(fileno(stdin), buf, BUFSIZ);
+
+            while(validateSubstr(buf, len) == -1) { // Validate the substring
+              write(fileno(stdout), message_validate_substr, sizeof(message_validate_substr));
+              write(fileno(stdout), ">>> ", 5);
+              memset(buf, 0, sizeof(buf));
+              len = read(fileno(stdin), buf, BUFSIZ);
+            }            
+
+            memset(substr, 0, sizeof(substr));
+            strncpy(substr, buf, 3);
+        
+            // Send the substring to the server
+            write(orig_sock, buf, BUFSIZ);    
+
           } break;
 
   		case 3: { // Set
@@ -179,20 +214,37 @@ int main ( int argc, char *argv[]) {
           write(fileno(stdout), message_set_replace, sizeof(message_set_replace));
         
         write(fileno(stdout), ">>> ", 5); 
-  			len = read(fileno(stdin), buf, BUFSIZ);
-  			while(validateSubstr(buf, len) == -1) {
-					write(fileno(stdout), message_validate_substr, sizeof(message_validate_substr));
-					write(fileno(stdout), ">>> ", 5);
-					len = read(fileno(stdin), buf, BUFSIZ);
-				}
+
+        memset(buf, 0, sizeof(buf));
+
+        // Read the new substring
+        len = read(fileno(stdin), buf, BUFSIZ);
+
+        while(validateSubstr(buf, len) == -1) { // Validate the substring
+          write(fileno(stdout), message_validate_substr, sizeof(message_validate_substr));
+          write(fileno(stdout), ">>> ", 5);
+          memset(buf, 0, sizeof(buf));
+          len = read(fileno(stdin), buf, BUFSIZ);
+        }
+
+        // printf("In set\n buf: %s, substr: %s\n", buf, substr);
+        memset(substr, 0, sizeof(substr));
 				strncpy(substr, buf, 3);
+        // Send the substring to the server
   			write(orig_sock, buf, BUFSIZ);
   		} break;
 
   		case 4: { // Quit
-  			write(fileno(stdout), message_score, sizeof(message_score));
+        // "Your score" message
+  			write(fileno(stdout), message_final_score, sizeof(message_final_score));
+        // Tell the server that client wants to quit
   			write(orig_sock, (char *)"4", 1);
-
+        memset(buf, 0, sizeof(buf));
+        // Read the score that server sends
+        len=read(orig_sock, buf, BUFSIZ);
+        // Display the score
+        write(fileno(stdout), buf, len);
+        write(fileno(stdout), "\n", 1);
   			exit(0);
   		} break;
 
@@ -207,14 +259,16 @@ int validateInput(char buf[], int len) {
 
   char temp[len - 1];
 
-  for(int i = 0; i < len - 1; i++) {
-    temp[i] = buf[i];
-  }
+  // for(int i = 0; i < len - 1; i++) {
+  //   temp[i] = buf[i];
+  // }
+
+  strncpy(temp, buf, len - 1);
 
   // printf("temp: %s, buf: %s", temp, buf);
 
   for(int i = 0; i < len - 1; i++) {
-    if(!(buf[i] >= 97 && buf[i] <= 122) && !(buf[i] >= 65 && buf[i] <= 90)) {
+    if(!(temp[i] >= 97 && temp[i] <= 122) && !(temp[i] >= 65 && temp[i] <= 90)) {
     	memset(temp, 0, sizeof(temp));
       return -1;
     }
@@ -227,11 +281,15 @@ int validateInput(char buf[], int len) {
 int validateOption(char buf[], int len) {
 	char temp[len - 1];
 
-  for(int i = 0; i < len - 1; i++) {
-    temp[i] = buf[i];
-  }
+  memset(temp, 0, sizeof(temp));
 
-  // printf("temp: %s and buf: %s", temp, buf);
+  strncpy(temp, buf, len - 1);
+
+  // for(int i = 0; i < len - 1; i++) {
+  //   temp[i] = buf[i];
+  // }
+
+  // printf("temp: %s and len: %d and buf: %s", temp, len, buf);
 
   if(strcmp(temp, submit) == 0) {
   	memset(temp, 0, sizeof(temp));
